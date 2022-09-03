@@ -8,7 +8,7 @@
 import Foundation
 
 struct UnsplashResponse: Decodable{
-    let result: [ImageData]
+    let results: [ImageData]
 }
 
 struct ImageData: Decodable {

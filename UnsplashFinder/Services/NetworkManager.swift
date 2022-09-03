@@ -6,34 +6,42 @@
 //
 
 import Foundation
+import UIKit
+
+enum NetworcErrors: Error {
+    case badURL
+    case badData
+    case decodeError
+}
 
 class NetworkManager {
     static let shared = NetworkManager()
     
-    func fetchURLUnslashImage(for wordOnEnglish: String, handler: @escaping (_ urlString: String) -> Void) {
+    func fetchURLUnslashImage(for wordOnEnglish: String, complitionHandler: @escaping (Result<String, NetworcErrors>) -> Void) {
         let key = "LUMG6YSLoGTass_HzRDzERd_dmrCMBSHpxqku6yl7P8"
         let query = wordOnEnglish.replacingOccurrences(of: " ", with: "%20")
         
-        guard let url = URL(string: "https://api.unsplash.com/search/photos?query=\(query)&client_id=\(key)") else { return }
+        guard let url = URL(string: "https://api.unsplash.com/search/photos?query=\(query)&client_id=\(key)") else {
+            complitionHandler(.failure(.badURL))
+            return
+        }
         
         URLSession.shared.dataTask(with: url) { (data, _, error) in
             guard let data = data else {
-                print(error?.localizedDescription ?? "No error description")
+                complitionHandler(.failure(.badData))
                 return }
             
             do {
                 let picturesForRequesr = try JSONDecoder().decode(UnsplashResponse.self, from: data)
-                if picturesForRequesr.result.count > 0 {
+                if picturesForRequesr.results.count > 0 {
                     DispatchQueue.main.async {
-                        handler(picturesForRequesr.result.randomElement()!.urls["thumb"]!)
+                        complitionHandler(.success(picturesForRequesr.results.randomElement()!.urls["thumb"]!))
                     }
                 }
-            } catch let error {
-                print(error.localizedDescription)
-                handler("")
+            } catch {
+                complitionHandler(.failure(.decodeError))
             }
         }.resume()
-        
     }
     
     private init() {}

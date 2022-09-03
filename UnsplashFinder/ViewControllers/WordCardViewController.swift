@@ -11,25 +11,44 @@ class WordCardViewController: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var engWordTextField: UITextField!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view.
-    }
 
     @IBAction func searchButtonPressed() {
-        NetworkManager.shared.fetchURLUnslashImage(for: engWordTextField.text ?? "") { urlString in
-            guard let url = URL(string: urlString) else { return }
-            guard let imageData = try? Data(contentsOf: url) else {
-                DispatchQueue.main.async {
-                    self.imageView.image = UIImage(systemName: "pc")
+        
+        if let engWord = engWordTextField.text, engWordTextField.text != "" {
+            NetworkManager.shared.fetchURLUnslashImage(for: engWord) { result in
+                switch result {
+                case .success(let url):
+                    guard let url = URL(string: url) else { return }
+                    guard let imageData = try? Data(contentsOf: url) else {
+                        DispatchQueue.main.async {
+                            self.imageView.image = UIImage(systemName: "pc")
+                        }
+                        return
+                    }
+                    DispatchQueue.main.async {
+                        self.imageView.image = UIImage(data: imageData)
+                    }
+                case .failure(let error):
+                    switch error {
+                    case .badURL:
+                        self.showErrorAlert(tithText: "bad URL")
+                    case .badData:
+                        self.showErrorAlert(tithText: "bad data")
+                    case .decodeError:
+                        self.showErrorAlert(tithText: "decode error")
+                    }
                 }
-                return
-            }
-            DispatchQueue.main.async {
-                self.imageView.image = UIImage(data: imageData)
             }
         }
+    }
+}
+
+extension WordCardViewController {
+    func showErrorAlert(tithText content: String) {
+        let alert = UIAlertController(title: "Request error", message: content, preferredStyle: .alert)
+        let action = UIAlertAction(title: "Ok", style: .default)
+        
+        alert.addAction(action)
     }
     
 }
