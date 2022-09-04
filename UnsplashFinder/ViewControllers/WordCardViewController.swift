@@ -11,22 +11,26 @@ class WordCardViewController: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var engWordTextField: UITextField!
+    
+    let networkManager = NetworkManager.shared
 
     @IBAction func searchButtonPressed() {
         
         if let engWord = engWordTextField.text, engWordTextField.text != "" {
-            NetworkManager.shared.fetchURLUnslashImage(for: engWord) { result in
+            networkManager.fetchURLUnslashImage(for: engWord) { result in
                 switch result {
                 case .success(let url):
-                    guard let url = URL(string: url) else { return }
-                    guard let imageData = try? Data(contentsOf: url) else {
-                        DispatchQueue.main.async {
-                            self.imageView.image = UIImage(systemName: "pc")
+                    DispatchQueue.global().async {
+                        guard let url = URL(string: url) else { return }
+                        guard let imageData = try? Data(contentsOf: url) else {
+                            DispatchQueue.main.async {
+                                self.imageView.image = UIImage(systemName: "pc")
+                            }
+                            return
                         }
-                        return
-                    }
-                    DispatchQueue.main.async {
-                        self.imageView.image = UIImage(data: imageData)
+                        DispatchQueue.main.async {
+                            self.imageView.image = UIImage(data: imageData)
+                        }
                     }
                 case .failure(let error):
                     switch error {
